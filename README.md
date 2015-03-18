@@ -1,3 +1,5 @@
+documents the app currently running at [kevinsprong23.github.io/dwelp-solver](http://kevinsprong23.github.io/dwelp-solver)
+
 Make a board using tiles from the menu below.
 
 Set the max number of moves to consider with the input box.
