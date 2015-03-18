@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<head>
+  <style>
+    html, body {
+      background: #f7f7f5; 
+    }
+  </style>
+</head>
+
+<body>
+  <div id="svg"></div>
+  <div id="svg-menu"></div>
+  
+  <div id="empties"></div>
+  <div id="singles"></div>
+  
+  <script src="http://d3js.org/d3.v3.js"></script>
+  <script src="dwelp.js"></script>
+  <script>
+    
+    function getFillColor(mode) {
+      if (mode === "empty") {
+        return "#f7f7f5";
+      } else if (mode === "blue") {
+        return "#268bd2";
+      } else if (mode === "orange") {
+        return "#eb8b16";
+      } else if (mode === "purple") {
+        return "#6c71c4";
+      } else if (mode === "green") {
+        return "#859900";
+      } else if (mode === "red") {
+        return "#dc322f";
+      } else if (mode === "bg") {
+        return "#f7f7f5";
+      }
+    }
+    
+    function processSpace(d, i) {
+      var coordinates = [d.row, d.col];
+      // what happens next depends on global mode
+      var array = [];
+      if (mode === "empty") {
+        array = empties;
+      } else {
+        array = singles[mode];
+      }
+    
+      var idx = array.pIndexOf(coordinates); // dwelp.js augments prototype
+      
+      // toggle existence in array 
+      if (idx === -1) {
+        d3.select("#circle_" + i)
+          .attr("stroke", "#000")
+          .attr("fill", getFillColor(mode));
+        array.push(coordinates);   
+        if (mode !== "empty") {
+          empties.pSplice(coordinates); 
+        } else {  
+          // remove from any singles arrays it might have been in
+          for (key in singles) {
+            singles[key].pSplice(coordinates); 
+          }
+        }
+      } else {
+        d3.select("#circle_" + i)
+          .attr("stroke", "#eee")
+          .attr("fill", getFillColor("bg"));
+        array.pSplice(coordinates); 
+      }
+      
+      d3.select("#empties").text(JSON.stringify(empties));
+      d3.select("#singles").text(JSON.stringify(singles));
+    }
+    
+    // hold dwelp info while we build
+    var mode = "empty";
+    
+    var empties = [];
+    var singles = {'blue':[], 'orange':[], 'purple':[], 'red': [], 'green': []};
+    
+    // set up grid on screen
+    var gridDim = 10;
+    var canvSize = 700;
+    
+    var spaceType = 'empty';
+    
+    var svg = d3.select("#svg")
+      .append("svg")
+        .attr("width", canvSize)
+        .attr("height", canvSize)
+      .append("g");
+
+    // need n-1 lines for n grid spaces
+    var xs = d3.range(canvSize/gridDim, canvSize + 0.1, canvSize/gridDim);
+    
+    // for circles
+    var cr = 0.48 * canvSize / gridDim;
+    var cxs = [];
+    for (var i = 0; i < xs.length; i++) {
+      for (var j = 0; j < xs.length; j++) {
+        cxs.push({row: i, col: j, cy: xs[i] - cr, cx: xs[j] - cr});
+      }
+    }
+    
+    // horizontal lines of grid
+    svg.selectAll(".horizontalGrid")
+        .data(xs)
+      .enter()
+        .append("line")
+        .attr({"x1" : 0,
+               "x2" : canvSize,
+               "y1" : function(d){return d;},
+               "y2" : function(d){return d;},
+               "fill" : "none",
+               "shape-rendering" : "crispEdges",
+               "stroke" : "#bbb",
+               "opacity" : 0.4,
+               "stroke-width" : "1px"});
+
+    // vertical line
+    svg.selectAll(".verticalGrid")
+        .data(xs)
+      .enter()
+        .append("line")
+        .attr({"x1" : function(d){return d;},
+               "x2" : function(d){return d;},
+               "y1" : 0,
+               "y2" : canvSize,
+               "fill" : "none",
+               "shape-rendering" : "crispEdges",
+               "stroke" : "#bbb",
+               "opacity" : 0.4,
+               "stroke-width" : "1px"});
+    
+    svg.selectAll(".mockCircles")
+        .data(cxs)
+      .enter()
+        .append("circle")
+        .attr({"id" : function(d, i) { return "circle_" + i; },
+               "cx" : function(d){return d.cx;},
+               "cy" : function(d){return d.cy;},
+               "r" : cr,
+               "fill": "#eee",
+               "stroke" : "#eee",
+               "opacity" : 0.2,
+               "stroke-width" : "1px"})
+        .on("click", processSpace);
+    
+    // MENU TO CHANGE MODE
+    var nMenu = 6;
+    
+    function changeMode(d, i) {
+      mode = d.mode; 
+      d3.selectAll(".menucircle").attr("opacity", 0.5);
+      d3.select("#menucircle_" + i).attr("opacity", 1);
+    }
+    
+    menuItems = [];
+    itemNames = ["empty", "blue", "orange", "purple", "green", "red"];
+    for (var j = 0; j < nMenu; j++) {
+      menuItems.push({mode: itemNames[j], cy: canvSize / gridDim - cr, cx: xs[j] - cr});
+    }   
+
+    var svgMenu = d3.select("#svg-menu")
+      .append("svg")
+        .attr("width", nMenu * canvSize / gridDim)
+        .attr("height", canvSize / gridDim)
+      .append("g");
+    
+    svgMenu.selectAll(".menucircles")
+        .data(menuItems)
+      .enter()
+        .append("circle")
+        .attr({"id" : function(d, i) { return "menucircle_" + i; },
+               "class" : "menucircle",
+               "cx" : function(d){return d.cx;},
+               "cy" : function(d){return d.cy;},
+               "r" : 0.8 * cr,
+               "fill": function(d){return getFillColor(d.mode);},
+               "opacity" : 1,
+               "stroke" : "#aaa",
+               "stroke-width" : "2px"})
+        .on("click", changeMode);
+    
+    /*
+    game = dwelp.Game();
+    game.maxMoves = 4;
+    
+    game.initSimpleBoard(3, 5);
+    
+    game.removeEmptySpace([0, 0]);
+    game.removeEmptySpace([0, 4]);
+    game.removeEmptySpace([2, 0]);
+    game.removeEmptySpace([2, 4]);
+    game.addEmptySpace([3, 2]);
+    
+    game.initSingle("orange", [0, 1]);
+    game.initSingle("orange", [0, 3]);
+    game.initSingle("orange", [2, 1]);
+    game.initSingle("orange", [2, 3]);
+    
+    game.initSingle("blue", [0, 2]);
+    game.initSingle("blue", [1, 0]);
+    game.initSingle("blue", [1, 4]);
+    game.initSingle("blue", [3, 2]);
+    
+    game.solvegame();
+    d3.select("body").append("div").text(game.solution);
+    */
+    
+  </script>
+</body>
