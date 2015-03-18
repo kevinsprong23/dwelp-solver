@@ -45,10 +45,7 @@ var dwelp = function dwelpSolver() {
   var copyOf = function(obj) {
     var clone = {};
     for (key in obj) {
-      clone[key] = [];
-      for (var i = 0; i < obj[key].length; i++) {
-        clone[key].push(obj[key][i]);
-      }
+      clone[key] = obj[key].slice();
     }
     return clone;
   }
@@ -56,10 +53,15 @@ var dwelp = function dwelpSolver() {
   //******************************************************************************
   // GAME LOGIC
 
-  // if there are no singles of any color left, we win
-  var weWin = function(remainingSingles) {
+  // if there are no singles or multi-tiles of any color left, we win
+  var weWin = function(remainingSingles, remainingMulties) {
     for (col in remainingSingles) {
       if (remainingSingles[col].length > 0) {
+        return false;
+      }
+    }
+    for (col in remainingMulties) {
+      if (remainingMulties[col].length > 0) {
         return false;
       }
     }
@@ -68,8 +70,8 @@ var dwelp = function dwelpSolver() {
 
   // see if moving tiles of color col, such that (tiles[0] -> to),
   // is legal on a given board
-  // singleTiles has already been filtered by color here
-  var isLegalMove = function(tiles, to, emptyTiles, singleTiles) {
+  // singleTiles and multiTiles have already been filtered by color here
+  var isLegalMove = function(tiles, to, emptyTiles, singleTiles, multiTiles) {
     // if to square isn't empty, fail fast
     if (emptyTiles.pIndexOf(to) === -1) {
       return false;
@@ -92,6 +94,17 @@ var dwelp = function dwelpSolver() {
             break;
           }
         }
+        
+      }
+      // check multi-tiles as well
+      if (!hasAdjacentSingle) {
+        for (var j = 0; j < multiTiles.length; j++) {
+          // don't need tile equality check because we can't move multi tiles
+          if (dist(target, multiTiles[j]) === 1) {
+            hasAdjacentSingle = true;
+            break;
+          }
+        }
       }
     }
     // if we get here, can return whether we found an adjacent single
@@ -100,8 +113,8 @@ var dwelp = function dwelpSolver() {
 
   // find ALL adjacent singles. worse performance than the similar code in
   // findLegalMove (that version stops on first success)
-  // again singleTiles has been split off by color and is an array of tuples
-  var findAdjacentSingles = function(tiles, to, singleTiles) {
+  // again single/multiTiles have been split off by color and is an array of tuples
+  var findAdjacentSingles = function(tiles, to, singleTiles, multiTiles) {
     var adjacents = [];
     var offset = findOffset(tiles[0], to);
     for (var i = 0; i < tiles.length; i++) {
@@ -114,16 +127,24 @@ var dwelp = function dwelpSolver() {
           adjacents.push(singleTiles[j]);
         }
       }
+      // check any multi tiles as well
+      for (var j = 0; j < multiTiles.length; j++) {
+        // dont need tile check; can't move multiTiles
+        if (dist(target, multiTiles[j]) === 1) {
+          adjacents.push(multiTiles[j]);
+        }
+      }
     }
     return adjacents;
   }
 
   // execute a given move
-  var moveTiles = function(color, tiles, to,
-                           emptyTiles, singleTiles, groupedTiles) {
+  var moveTiles = function(color, tiles, to, emptyTiles,
+                            singleTiles, multiTiles, groupedTiles) {
     // first make copies of all arrays
     newEmpties = emptyTiles.concat(tiles); // add newly vacated tiles
     newSingles = copyOf(singleTiles);
+    newMulties = copyOf(multiTiles);
     newGrouped = copyOf(groupedTiles);
 
     var idx = -1;
@@ -151,14 +172,18 @@ var dwelp = function dwelpSolver() {
 
     // remove any same-color adjacent tiles from singleTiles
     // and add them to groupedTiles
-    var adjacents = findAdjacentSingles(tiles, to, singleTiles[color]);
+    var adjacents = findAdjacentSingles(tiles, to, singleTiles[color], multiTiles[color]);
     for (var i = 0; i < adjacents.length; i++) {
       newSingles[color].pSplice(adjacents[i]);
+      // remove them from each multi-tile category as well
+      for (key in multiTiles) {
+        newMulties[key].pSplice(adjacents[i]);
+      }
       newGrouped[color].push(adjacents[i]);
     }
 
     // return copied objects
-    return {empties: newEmpties, singles: newSingles, groups: newGrouped};
+    return {empties: newEmpties, singles: newSingles, multies: newMulties, groups: newGrouped};
   }
 
   // only call this in alternating colors mode
@@ -167,8 +192,8 @@ var dwelp = function dwelpSolver() {
   }
 
   // recursively find, and assign to parent object, a solution to a game
-  var solve = function(move, maxMoves, moveChain, empties,
-                       singles, groups, alternatingColors, forcedColor) {
+  var solve = function(move, maxMoves, moveChain, empties, singles,
+                        multies, groups, alternatingColors, forcedColor) {
     if (move >= maxMoves) {
       return false;
     }
@@ -182,7 +207,7 @@ var dwelp = function dwelpSolver() {
     }
 
     // find just one solution
-    var foundSolution = false;
+    var solExists = false;
     for (var i = 0; i < legalColors.length; i++) {
       var col = legalColors[i];
       if (forcedColor.length > 0 && col !== forcedColor) {
@@ -201,33 +226,35 @@ var dwelp = function dwelpSolver() {
         }
         for (var k = 0; k < sources.length; k++) {
           var src = sources[k];
-          if (isLegalMove(src, cand, empties, singles[col])) {
-            updatedState = moveTiles(col, src, cand, empties, singles, groups);
+          if (isLegalMove(src, cand, empties, singles[col], multies[col])) {
+            updatedState = moveTiles(col, src, cand, empties, singles, multies, groups);
             var nextMoveStr = JSON.stringify(src[0]) + "->" + JSON.stringify(cand);
             
-            if (weWin(updatedState.singles)) {
+            if (weWin(updatedState.singles, updatedState.multies)) {
               moveChain += nextMoveStr;
               this.solution = moveChain;
               return true;
             } else {
               var nextCol = (alternatingColors) ? getNextForcedColor(col) : "";
-              // recursion
-              foundSolution = foundSolution | this.solve(move + 1, maxMoves,
-                                                  moveChain + nextMoveStr + ",",
-                                                  updatedState.empties,
-                                                  updatedState.singles,
-                                                  updatedState.groups,
-                                                  alternatingColors,
-                                                  nextCol);
+              // recursion, son
+              solExists = solExists | this.solve(move + 1, maxMoves,
+                                                 moveChain + nextMoveStr + ":",
+                                                 updatedState.empties,
+                                                 updatedState.singles,
+                                                 updatedState.multies,
+                                                 updatedState.groups,
+                                                 alternatingColors,
+                                                 nextCol);
             }
-          }
+          } 
         }
         // might succeed fast once we have checked this round of sources
-        if (foundSolution) {
-          return true;
-        }     
+        //if (solExists && move + 1 <= maxMoves) {
+        //  return true;
+        //}     
       }
     }
+    return false;
   }
 
   //******************************************************************************
@@ -266,29 +293,48 @@ var dwelp = function dwelpSolver() {
     // remove from empties
     this.removeEmptySpace(pos);
   }
+  
+  // add initial tiles to a board
+  var initMulti = function(colors, pos) {
+    // add to each multis color independently
+    // works since we pSplice from all colors when matched
+    for (var i = 0; i < colors.length; i++) {
+      var color = colors[i];
+      if (this.multies.hasOwnProperty(color)) {
+        this.multies[color].push(pos);
+      } else {
+        this.multies[color] = [pos];
+      }
+    }
+    // remove from empties
+    this.removeEmptySpace(pos);
+      
+  }
 
   // wrapper for recursive solve call; populates this.solution
   var solvegame = function() {
     // needs to be this ugly so obj copies can be passed in recursive calls
-    this.solve(this.move, this.maxMoves, "", this.empties, this.singles,
-               this.groups, this.alternatingColors, this.forcedColor);
+    this.solve(this.move, this.maxMoves, this.solution, this.empties, 
+               this.singles, this.multies, this.groups, this.alternatingColors,
+               "");
   }
 
   // game constructor
   var Game = function() {
     return { empties: [],
              singles: {},
+             multies: {'blue':[], 'orange':[], 'purple':[], 'green': []},
              groups: {},
              move: 0,
              maxMoves: 0,
              alternatingColors: false,
-             forcedColor: "",
-             initSimpleBoard: initSimpleBoard,
-             addEmptySpace: addEmptySpace,
-             removeEmptySpace: removeEmptySpace,
-             initSingle: initSingle,
+             //initSimpleBoard: initSimpleBoard,
+             //addEmptySpace: addEmptySpace,
+             //removeEmptySpace: removeEmptySpace,
+             //initSingle: initSingle,
              solve: solve,
              solvegame: solvegame,
+             copyGameInput: copyOf,
              solution: ""
            };
   }
