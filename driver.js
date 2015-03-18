@@ -291,16 +291,58 @@ var checkForAlternatingMode = function() {
   return true;
 }
 
+// quickie to clear results lines + text
+var clearResults = function() {
+  svg.selectAll(".resultslines").data([]).exit().remove();
+}
+
 // solution looks like [3,2]->[3,1]:[0,0]->[0,1]
 var plotSolution = function(solution) {
+  //clearResults();
+  
+  // populate move list
   var moves = solution.split(":");
+  var spaces = [],
+      start = [],
+      end = [],
+      moveList  = [];
   for (var i = 0; i < moves.length; i++) {
-    
+    spaces = moves[i].split("->");
+    start = JSON.parse(spaces[0]);
+    end = JSON.parse(spaces[1]);
+    moveList.push({x1: xs[start[1]] - cr, y1: xs[start[0]] - cr, 
+                   x2: xs[end[1]] - cr, y2: xs[end[0]] - cr});
   }
+  
+  // now plot it
+  var g = svg.selectAll(".resultslines")
+      .data(moveList)
+    .enter()
+      .append("g")
+      .attr("class", "resultslines");
+  
+  g.append("line")
+      .attr({"x1" : function(d){return d.x1;},
+             "x2" : function(d){return d.x2;},
+             "y1" : function(d){return d.y1;},
+             "y2" : function(d){return d.y2;},
+             "fill" : "none",
+             "shape-rendering" : "crispEdges",
+             "stroke" : "#dc322f",
+             "opacity" : 0.9,
+             "stroke-width" : "2px"});
+  
+  g.append("text")
+      .text(function(d, i) {return (i + 1) + "."})
+      .attr({"x" : function(d){return 0.5 * d.x1 + 0.5 * d.x2;},
+             "y" : function(d){return 0.5 * d.y1 + 0.5 * d.y2;},
+             "fill" : "#dc322f",
+             "font-size" : 18,
+             "stroke" : "#dc322f"});
+  
 }
 
 var solveCurrentSetup = function() {
-  
   // super rudimentary, non-robust error checking
   if (empties.length === 0) {
     d3.select("#solution").text("Invalid game: no empty tiles");
@@ -308,13 +350,13 @@ var solveCurrentSetup = function() {
   }
   var hasSingles = false;
   for (key in singles) {
-    if (singles[key].length > 1) {
+    if (singles[key].length > 1 || (singles[key].length == 1 && multies[key].length >= 1)) {
       hasSingles = true;
       break;
     }
   }
   if (!hasSingles) {
-    d3.select("#solution").text("Invalid game: fewer than two singles of a color");
+    d3.select("#solution").text("Invalid game: fewer than two elements of a color");
     return 0;
   }
   
@@ -331,8 +373,6 @@ var solveCurrentSetup = function() {
   // solve and post
   game.solvegame();
   d3.select("#solution").text("Solution: " + JSON.stringify(game.solution));
-  
-  //plotSolution(game.solution);
-  
+  plotSolution(game.solution);
 }
 
