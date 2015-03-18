@@ -217,7 +217,7 @@ var nMenuRow = 2;
 
 function changeMode(d, i) {
   mode = d.mode; 
-  d3.selectAll(".menucircle").attr("opacity", 0.5);
+  d3.selectAll(".menucircle").attr("opacity", 0.8);
   d3.select("#menucircle_" + i).attr("opacity", 1);
 }
 
