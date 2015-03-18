@@ -46,7 +46,7 @@
         array = singles[mode];
       }
     
-      var idx = array.pIndexOf(coordinates); // dwelp.js augments prototype
+      var idx = array.pIndexOf(coordinates);  // dwelp.js augments prototype
       
       // toggle existence in array 
       if (idx === -1) {
@@ -54,14 +54,15 @@
           .attr("stroke", "#000")
           .attr("fill", getFillColor(mode));
         array.push(coordinates);   
-        if (mode !== "empty") {
-          empties.pSplice(coordinates); 
-        } else {  
-          // remove from any singles arrays it might have been in
-          for (key in singles) {
-            singles[key].pSplice(coordinates); 
+        // remove from any other arrays it might have been in
+        for (key in singles) {
+          if (singles[key] !== array) {
+            singles[key].pSplice(coordinates);  // another prototype augment
           }
         }
+        if (mode !== "empty") {
+          empties.pSplice(coordinates); 
+        } 
       } else {
         d3.select("#circle_" + i)
           .attr("stroke", "#eee")
