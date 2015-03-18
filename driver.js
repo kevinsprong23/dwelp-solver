@@ -305,7 +305,7 @@ var toggle = function(array, el) {
 // solution looks like [3,2]->[3,1]:[0,0]->[0,1]
 var plotSolution = function(solution) {
   var colors = ["#dc322f", "#268bd2", "#859900"];
-  var offsets = [-10, 0, 10];
+  var offsets = [-10, 0, 10, 5];
   var color = "#859900";
   var offset = -5;
   // populate move list
