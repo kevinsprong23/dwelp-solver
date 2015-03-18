@@ -267,6 +267,8 @@ var resetCurrentSetup = function() {
     .attr({"fill" : "#eee",
            "stroke" : "#eee",
            "opacity" : 0.2});
+  
+  clearResults();
 }
 
 // ****************************************************************************
