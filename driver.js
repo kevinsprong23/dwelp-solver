@@ -296,22 +296,39 @@ var clearResults = function() {
   svg.selectAll(".resultslines").data([]).exit().remove();
 }
 
+// move to the next element with wrap around
+var toggle = function(array, el) {
+  var idx = array.indexOf(el);
+  return (idx === array.length - 1) ? array[0] : array[idx + 1];
+}
+
 // solution looks like [3,2]->[3,1]:[0,0]->[0,1]
 var plotSolution = function(solution) {
-  //clearResults();
-  
+  var colors = ["#dc322f", "#268bd2", "#859900"];
+  var offsets = [-10, 0, 10];
+  var color = "#859900";
+  var offset = -5;
   // populate move list
   var moves = solution.split(":");
-  var spaces = [],
+  var prevEnd = "",
+      spaces = [],
       start = [],
       end = [],
       moveList  = [];
   for (var i = 0; i < moves.length; i++) {
     spaces = moves[i].split("->");
+    if (spaces[0] !== prevEnd) {
+      color = toggle(colors, color);
+      offset = toggle(offsets, offset);
+    }
+    
     start = JSON.parse(spaces[0]);
     end = JSON.parse(spaces[1]);
     moveList.push({x1: xs[start[1]] - cr, y1: xs[start[0]] - cr, 
-                   x2: xs[end[1]] - cr, y2: xs[end[0]] - cr});
+                   x2: xs[end[1]] - cr, y2: xs[end[0]] - cr,
+                   color: color, offset: offset});
+    
+    prevEnd = spaces[1];
   }
   
   // now plot it
@@ -328,17 +345,17 @@ var plotSolution = function(solution) {
              "y2" : function(d){return d.y2;},
              "fill" : "none",
              "shape-rendering" : "crispEdges",
-             "stroke" : "#dc322f",
+             "stroke" : function(d){return d.color;},
              "opacity" : 0.9,
              "stroke-width" : "2px"});
   
   g.append("text")
       .text(function(d, i) {return (i + 1) + "."})
-      .attr({"x" : function(d){return 0.5 * d.x1 + 0.5 * d.x2;},
-             "y" : function(d){return 0.5 * d.y1 + 0.5 * d.y2;},
-             "fill" : "#dc322f",
+      .attr({"x" : function(d){return 0.5 * d.x1 + 0.5 * d.x2 + d.offset;},
+             "y" : function(d){return 0.5 * d.y1 + 0.5 * d.y2 + d.offset;},
+             "fill" : function(d){return d.color;},
              "font-size" : 18,
-             "stroke" : "#dc322f"});
+             "stroke" : function(d){return d.color;}});
   
 }
 
