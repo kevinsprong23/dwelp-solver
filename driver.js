@@ -109,7 +109,7 @@ var mode = "empty";
 
 var empties = [];
 var singles = {'blue':[], 'orange':[], 'purple':[], 'red': [], 'green': []};
-var multies = {'blue':[], 'orange':[], 'purple':[], 'green': []};
+var multies = {'blue':[], 'orange':[], 'purple':[], 'green': [], 'red': []};
 
 // set up grid on screen
 var gridDim = 10;
@@ -148,7 +148,7 @@ svg.selectAll(".horizontalGrid")
            "shape-rendering" : "crispEdges",
            "stroke" : "#bbb",
            "opacity" : 0.4,
-           "stroke-width" : "1px"});
+           "stroke-width" : "2px"});
 
 // vertical line
 svg.selectAll(".verticalGrid")
@@ -163,7 +163,7 @@ svg.selectAll(".verticalGrid")
            "shape-rendering" : "crispEdges",
            "stroke" : "#bbb",
            "opacity" : 0.4,
-           "stroke-width" : "1px"});
+           "stroke-width" : "2px"});
 
 svg.selectAll(".boardcircles")
     .data(cxs)
@@ -257,7 +257,7 @@ svgMenu.selectAll(".menucircles")
 var resetCurrentSetup = function() {
   empties = [];
   singles = {};
-  multies = {'blue':[], 'orange':[], 'purple':[], 'green': []};
+  multies = {'blue':[], 'orange':[], 'purple':[], 'green': [], 'red': []};
   
   d3.select("#movecount").property("value", "");
   
@@ -275,17 +275,20 @@ var resetCurrentSetup = function() {
 // GAME HANDLING AND SOLVER MAGIC HAPPENS HERE
 
 var checkForAlternatingMode = function() {
-  if (!(singles.hasOwnProperty['red'] && singles.hasOwnProperty['green'])) {
+  if (!(singles.hasOwnProperty('red') && singles.hasOwnProperty('green'))) {
+    //console.log("false:  needs red/green");
     return false; 
   }
   
   for (key in singles) {
-    if ((key === 'red' || key ==='green')) {
+    if ((key === 'red' || key === 'green')) {
       if(singles[key].length === 0) {
+        //console.log("false: red/green empty");
         return false;
       }
     } else {
       if(singles[key].length > 0) {
+        //console.log("false: key " + key + " exists");
         return false;
       }
     }
@@ -296,6 +299,7 @@ var checkForAlternatingMode = function() {
 // quickie to clear results lines + text
 var clearResults = function() {
   svg.selectAll(".resultslines").data([]).exit().remove();
+  d3.select("#solution").text("");
 }
 
 // move to the next element with wrap around
@@ -306,10 +310,14 @@ var toggle = function(array, el) {
 
 // solution looks like [3,2]->[3,1]:[0,0]->[0,1]
 var plotSolution = function(solution) {
+  if (solution.length === 0) {
+    return;
+  }
+  
   var colors = ["#dc322f", "#268bd2", "#859900"];
   var offsets = [-10, 0, 10, 5];
   var color = "#859900";
-  var offset = -5;
+  var offset = -10;
   // populate move list
   var moves = solution.split(":");
   var prevEnd = "",
@@ -388,6 +396,8 @@ var solveCurrentSetup = function() {
   game.multies = game.copyGameInput(multies);
   game.alternatingColors = checkForAlternatingMode();  
   game.maxMoves = +d3.select("#movecount").property("value");
+  
+  //console.log(JSON.stringify(game));
   
   // solve and post
   game.solvegame();

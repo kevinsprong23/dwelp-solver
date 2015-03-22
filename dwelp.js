@@ -85,7 +85,7 @@ var dwelp = function dwelpSolver() {
         return false;
       }
       // and that we are moving adjacent to 1+ same-color single tiles
-      if (!hasAdjacentSingle) {
+      if (!hasAdjacentSingle && singleTiles) {
         for (var j = 0; j < singleTiles.length; j++) {
           // ignore current move tile if this happens to be a single
           if (!(tiles.length === 1 && peq(tiles[i], singleTiles[j])) &&
@@ -97,7 +97,7 @@ var dwelp = function dwelpSolver() {
         
       }
       // check multi-tiles as well
-      if (!hasAdjacentSingle) {
+      if (!hasAdjacentSingle && multiTiles) {
         for (var j = 0; j < multiTiles.length; j++) {
           // don't need tile equality check because we can't move multi tiles
           if (dist(target, multiTiles[j]) === 1) {
@@ -120,18 +120,22 @@ var dwelp = function dwelpSolver() {
     for (var i = 0; i < tiles.length; i++) {
       var target = translate(tiles[i], offset);
       // and that we are moving adjacent to 1+ same-color single tiles
-      for (var j = 0; j < singleTiles.length; j++) {
-        // ignore current move tile if this happens to be a single
-        if (!(tiles.length === 1 && peq(tiles[i], singleTiles[j])) &&
-            dist(target, singleTiles[j]) === 1) {
-          adjacents.push(singleTiles[j]);
+      if (singleTiles) {
+        for (var j = 0; j < singleTiles.length; j++) {
+          // ignore current move tile if this happens to be a single
+          if (!(tiles.length === 1 && peq(tiles[i], singleTiles[j])) &&
+              dist(target, singleTiles[j]) === 1) {
+            adjacents.push(singleTiles[j]);
+          }
         }
       }
       // check any multi tiles as well
-      for (var j = 0; j < multiTiles.length; j++) {
-        // dont need tile check; can't move multiTiles
-        if (dist(target, multiTiles[j]) === 1) {
-          adjacents.push(multiTiles[j]);
+      if (multiTiles) {
+        for (var j = 0; j < multiTiles.length; j++) {
+          // dont need tile check; can't move multiTiles
+          if (dist(target, multiTiles[j]) === 1) {
+            adjacents.push(multiTiles[j]);
+          }
         }
       }
     }
@@ -185,6 +189,18 @@ var dwelp = function dwelpSolver() {
     // return copied objects
     return {empties: newEmpties, singles: newSingles, multies: newMulties, groups: newGrouped};
   }
+  
+  // check if colors are still alternating
+  var isStillAlternating = function(singles, alternatingColors) {
+    if (!alternatingColors) {
+      return false;
+    }
+    if (singles.hasOwnProperty("red") && singles["red"].length > 0 &&
+        singles.hasOwnProperty("green") && singles["green"].length > 0) {
+      return true;
+    }
+    return false;
+  }
 
   // only call this in alternating colors mode
   var getNextForcedColor = function(col) {
@@ -195,6 +211,7 @@ var dwelp = function dwelpSolver() {
   var solve = function(move, maxMoves, moveChain, empties, singles,
                         multies, groups, alternatingColors, forcedColor) {
     if (move >= maxMoves) {
+      //console.log("too many moves");
       return false;
     }
 
@@ -235,6 +252,7 @@ var dwelp = function dwelpSolver() {
               this.solution = moveChain;
               return true;
             } else {
+              var alternatingColors = isStillAlternating(singles, alternatingColors);
               var nextCol = (alternatingColors) ? getNextForcedColor(col) : "";
               // recursion, son
               solExists = solExists | this.solve(move + 1, maxMoves,
@@ -254,6 +272,7 @@ var dwelp = function dwelpSolver() {
         //}     
       }
     }
+    //console.log("no legal moves");
     return false;
   }
 
@@ -323,7 +342,7 @@ var dwelp = function dwelpSolver() {
   var Game = function() {
     return { empties: [],
              singles: {},
-             multies: {'blue':[], 'orange':[], 'purple':[], 'green': []},
+             multies: {'blue':[], 'orange':[], 'purple':[], 'green': [], 'red': []},
              groups: {},
              move: 0,
              maxMoves: 0,

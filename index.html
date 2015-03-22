@@ -61,12 +61,12 @@
 </head>
 
 <body>
-  <h3>This will make a lot of sense, if you've played dwelp.</h3>
+  <h3>This will make sense if you've played dwelp.</h3>
   <div id="svg"></div>
   <div id="svg-menu"></div>
   
   <div id="controls">
-    <span id="moves">Move Limit: <input id="movecount" type="number"></input></span>
+    <span id="moves">Move Limit: <input id="movecount" type="number" min="0"></input></span>
     <input id="solve" type="button" value="Solve" onclick="solveCurrentSetup();" />
     <input id="clear" type="button" value="Clear" onclick="clearResults();" />
     <input id="reset" type="button" value="Reset" onclick="resetCurrentSetup();" />
@@ -78,7 +78,7 @@
   <p></p>
   <div id="solution"></div>
   <p></p>
-  <div id="info">2015 Kevin Sprong. Source code <a href="https://github.com/kevinsprong23/dwelp-solver">on GitHub.</a></div>
+  <div id="info">Kevin Sprong, 2015. <a href="https://github.com/kevinsprong23/dwelp-solver">Source code</a>.</div>
   
   <script src="http://d3js.org/d3.v3.js"></script>
   <script src="dwelp.js"></script>
