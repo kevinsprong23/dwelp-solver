@@ -8,6 +8,12 @@
       font-size: 1.25em;
     }
     
+    #container {
+      margin-left: auto;
+      margin-right: auto;
+      width: 600px;
+    }
+    
     #svg {
       padding-bottom: 15px;
     }
@@ -46,7 +52,7 @@
       border: none;
       border-radius: 30px;
       font-family: Arial, sans-serif;
-      font-size: 0.75em;
+      font-size: 0.6em;
       color: #eee;
       -moz-box-shadow:    1px 1px 1px 1px #aaa;
       -webkit-box-shadow: 1px 1px 1px 1px #aaa;
@@ -61,25 +67,26 @@
 </head>
 
 <body>
-  <h3>This will make sense if you've played dwelp.</h3>
-  <div id="svg"></div>
-  <div id="svg-menu"></div>
-  
-  <div id="controls">
-    <span id="moves">Move Limit: <input id="movecount" type="number" min="0"></input></span>
-    <input id="solve" type="button" value="Solve" onclick="solveCurrentSetup();" />
-    <input id="clear" type="button" value="Clear" onclick="clearResults();" />
-    <input id="reset" type="button" value="Reset" onclick="resetCurrentSetup();" />
+  <div id="container">
+    <h3>Solve Dwelp.</h3>
+    <div id="svg"></div>
+    <div id="svg-menu"></div>
+
+    <div id="controls">
+      <span id="moves">Move Limit: <input id="movecount" type="number" min="0"></input></span>
+      <input id="solve" type="button" value="Solve" onclick="solveCurrentSetup();" />
+      <input id="clear" type="button" value="Clear" onclick="clearResults();" />
+      <input id="reset" type="button" value="Reset" onclick="resetCurrentSetup();" />
+    </div>
+
+    <div id="empties"></div>
+    <div id="singles"></div>
+    <div id="multies"></div>
+    <p></p>
+    <div id="solution"></div>
+    <p></p>
+    <div id="info">Kevin Sprong, 2015. <a href="https://github.com/kevinsprong23/dwelp-solver">Source code</a>.</div>
   </div>
-  
-  <div id="empties"></div>
-  <div id="singles"></div>
-  <div id="multies"></div>
-  <p></p>
-  <div id="solution"></div>
-  <p></p>
-  <div id="info">Kevin Sprong, 2015. <a href="https://github.com/kevinsprong23/dwelp-solver">Source code</a>.</div>
-  
   <script src="http://d3js.org/d3.v3.js"></script>
   <script src="dwelp.js"></script>
   <script src="driver.js"></script>

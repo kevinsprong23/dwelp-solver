@@ -74,6 +74,7 @@ var dwelp = function dwelpSolver() {
   var isLegalMove = function(tiles, to, emptyTiles, singleTiles, multiTiles) {
     // if to square isn't empty, fail fast
     if (emptyTiles.pIndexOf(to) === -1) {
+      console.log("to tile not empty");
       return false;
     }
     // else check each squares availability
@@ -81,7 +82,9 @@ var dwelp = function dwelpSolver() {
     var hasAdjacentSingle = false;
     for (var i = 0; i < tiles.length; i++) {
       var target = translate(tiles[i], offset);
-      if (emptyTiles.pIndexOf(target) === -1) {
+      // check the group ("tiles") as well; group can move onto previous self
+      if (emptyTiles.pIndexOf(target) === -1 && tiles.pIndexOf(target) === -1) {
+        //console.log("target tile " + JSON.stringify(target) + " is occupied by another non-group tile");
         return false;
       }
       // and that we are moving adjacent to 1+ same-color single tiles
@@ -90,11 +93,11 @@ var dwelp = function dwelpSolver() {
           // ignore current move tile if this happens to be a single
           if (!(tiles.length === 1 && peq(tiles[i], singleTiles[j])) &&
               dist(target, singleTiles[j]) === 1) {
+            // console.log("target tile " + JSON.stringify(target) + " is near a single tile");
             hasAdjacentSingle = true;
             break;
           }
-        }
-        
+        } 
       }
       // check multi-tiles as well
       if (!hasAdjacentSingle && multiTiles) {
@@ -111,15 +114,14 @@ var dwelp = function dwelpSolver() {
     return hasAdjacentSingle;
   }
 
-  // find ALL adjacent singles. worse performance than the similar code in
-  // findLegalMove (that version stops on first success)
+  // find ALL adjacent singles. 
   // again single/multiTiles have been split off by color and is an array of tuples
   var findAdjacentSingles = function(tiles, to, singleTiles, multiTiles) {
     var adjacents = [];
     var offset = findOffset(tiles[0], to);
     for (var i = 0; i < tiles.length; i++) {
       var target = translate(tiles[i], offset);
-      // and that we are moving adjacent to 1+ same-color single tiles
+      // check each of the single tiles for adjacency
       if (singleTiles) {
         for (var j = 0; j < singleTiles.length; j++) {
           // ignore current move tile if this happens to be a single
@@ -187,6 +189,9 @@ var dwelp = function dwelpSolver() {
     }
 
     // return copied objects
+    //console.log("new singles: " + JSON.stringify(newSingles));
+    //console.log("new groups: " + JSON.stringify(newGrouped));
+    //console.log("new empties: " + JSON.stringify(newEmpties));
     return {empties: newEmpties, singles: newSingles, multies: newMulties, groups: newGrouped};
   }
   
@@ -222,9 +227,13 @@ var dwelp = function dwelpSolver() {
         legalColors.push(key);
       }
     }
+    for (key in multies) {
+      if (multies[key].length > 0) {
+        legalColors.push(key);
+      }
+    }
 
     // find just one solution
-    var solExists = false;
     for (var i = 0; i < legalColors.length; i++) {
       var col = legalColors[i];
       if (forcedColor.length > 0 && col !== forcedColor) {
@@ -232,44 +241,62 @@ var dwelp = function dwelpSolver() {
       }
       for (var j = 0; j < empties.length; j++) {
         var cand = empties[j];
+        /*
+        if (move === 0 && !peq(cand, [7,6])) {
+          console.log("skipping empty: " + JSON.stringify(cand));
+          continue;
+        }
+        */
         var sources = [];
         // decide whether to pull candidate moves from groups or singles
         if (groups.hasOwnProperty(col) && groups[col].length > 0) {
+          //console.log("move " + move + ": considering groups");
           sources.push(groups[col]);  // array wrapping the groups array
         } else {
+          //console.log("move " + move + ": considering singles");
           for (var k = 0; k < singles[col].length; k++) {
             sources.push([singles[col][k]]);  // individually wrapped elements
           }
         }
+        // permute the sources array, to not get stuck in searching edges
+        d3.shuffle(sources);
+        
+        // loop and check all legal moves
         for (var k = 0; k < sources.length; k++) {
           var src = sources[k];
+          /*
+          if (move === 0 && !peq(src[0], [7,5])) {
+            console.log("skipping src: " + JSON.stringify(src));
+            continue;
+          }
+          */
+        
           if (isLegalMove(src, cand, empties, singles[col], multies[col])) {
             updatedState = moveTiles(col, src, cand, empties, singles, multies, groups);
             var nextMoveStr = JSON.stringify(src[0]) + "->" + JSON.stringify(cand);
-            
+            //console.log("move " + move + ": considering " + nextMoveStr);
             if (weWin(updatedState.singles, updatedState.multies)) {
               moveChain += nextMoveStr;
               this.solution = moveChain;
               return true;
             } else {
               var alternatingColors = isStillAlternating(singles, alternatingColors);
-              var nextCol = (alternatingColors) ? getNextForcedColor(col) : "";
+              var nextForcedCol = (alternatingColors) ? getNextForcedColor(col) : "";
               // recursion, son
-              solExists = solExists | this.solve(move + 1, maxMoves,
-                                                 moveChain + nextMoveStr + ":",
-                                                 updatedState.empties,
-                                                 updatedState.singles,
-                                                 updatedState.multies,
-                                                 updatedState.groups,
-                                                 alternatingColors,
-                                                 nextCol);
+              var solExists = this.solve(move + 1, maxMoves,
+                                         moveChain + nextMoveStr + ":",
+                                         updatedState.empties,
+                                         updatedState.singles,
+                                         updatedState.multies,
+                                         updatedState.groups,
+                                         alternatingColors,
+                                         nextForcedCol);
+              if (solExists) {
+                return true;
+              }
             }
           } 
         }
-        // might succeed fast once we have checked this round of sources
-        //if (solExists && move + 1 <= maxMoves) {
-        //  return true;
-        //}     
       }
     }
     //console.log("no legal moves");
@@ -360,6 +387,6 @@ var dwelp = function dwelpSolver() {
 
   //******************************************************************************
   // DWELP object
-  var dwelp = { Game : Game };
+  var dwelp = { Game : Game, isLegalMove: isLegalMove };
   return dwelp;
 }();

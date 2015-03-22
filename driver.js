@@ -113,7 +113,7 @@ var multies = {'blue':[], 'orange':[], 'purple':[], 'green': [], 'red': []};
 
 // set up grid on screen
 var gridDim = 10;
-var canvSize = 700;
+var canvSize = 500;
 
 var spaceType = 'empty';
 
