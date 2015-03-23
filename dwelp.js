@@ -72,9 +72,11 @@ var dwelp = function dwelpSolver() {
   // is legal on a given board
   // singleTiles and multiTiles have already been filtered by color here
   var isLegalMove = function(tiles, to, emptyTiles, singleTiles, multiTiles) {
+    var DEBUG = false;
+    
     // if to square isn't empty, fail fast
     if (emptyTiles.pIndexOf(to) === -1) {
-      console.log("to tile not empty");
+      if (DEBUG) console.log("to tile " + JSON.stringify(to) + " not empty");
       return false;
     }
     // else check each squares availability
@@ -84,7 +86,7 @@ var dwelp = function dwelpSolver() {
       var target = translate(tiles[i], offset);
       // check the group ("tiles") as well; group can move onto previous self
       if (emptyTiles.pIndexOf(target) === -1 && tiles.pIndexOf(target) === -1) {
-        //console.log("target tile " + JSON.stringify(target) + " is occupied by another non-group tile");
+        if (DEBUG) console.log("target tile " + JSON.stringify(target) + " is occupied by another non-group tile");
         return false;
       }
       // and that we are moving adjacent to 1+ same-color single tiles
@@ -93,7 +95,7 @@ var dwelp = function dwelpSolver() {
           // ignore current move tile if this happens to be a single
           if (!(tiles.length === 1 && peq(tiles[i], singleTiles[j])) &&
               dist(target, singleTiles[j]) === 1) {
-            // console.log("target tile " + JSON.stringify(target) + " is near a single tile");
+            if (DEBUG) console.log("target tile " + JSON.stringify(target) + " is near a single tile");
             hasAdjacentSingle = true;
             break;
           }
@@ -147,6 +149,8 @@ var dwelp = function dwelpSolver() {
   // execute a given move
   var moveTiles = function(color, tiles, to, emptyTiles,
                             singleTiles, multiTiles, groupedTiles) {
+    var DEBUG = false;
+    
     // first make copies of all arrays
     newEmpties = emptyTiles.concat(tiles); // add newly vacated tiles
     newSingles = copyOf(singleTiles);
@@ -189,9 +193,11 @@ var dwelp = function dwelpSolver() {
     }
 
     // return copied objects
-    //console.log("new singles: " + JSON.stringify(newSingles));
-    //console.log("new groups: " + JSON.stringify(newGrouped));
-    //console.log("new empties: " + JSON.stringify(newEmpties));
+    if (DEBUG) {
+      console.log("new singles: " + JSON.stringify(newSingles));
+      console.log("new groups: " + JSON.stringify(newGrouped));
+      console.log("new empties: " + JSON.stringify(newEmpties));
+    }
     return {empties: newEmpties, singles: newSingles, multies: newMulties, groups: newGrouped};
   }
   
@@ -215,13 +221,15 @@ var dwelp = function dwelpSolver() {
   // recursively find, and assign to parent object, a solution to a game
   var solve = function(move, maxMoves, moveChain, empties, singles,
                         multies, groups, alternatingColors, forcedColor) {
+    var DEBUG = false;
+    
     if (move >= maxMoves) {
-      //console.log("too many moves");
+      if (DEBUG) console.log("too many moves");
       return false;
     }
 
     // find all legal moves and branch
-    legalColors = [];
+    var legalColors = [];
     for (key in singles) {
       if (singles[key].length > 0) {
         legalColors.push(key);
@@ -241,12 +249,14 @@ var dwelp = function dwelpSolver() {
       }
       for (var j = 0; j < empties.length; j++) {
         var cand = empties[j];
-        /*
-        if (move === 0 && !peq(cand, [7,6])) {
-          console.log("skipping empty: " + JSON.stringify(cand));
-          continue;
+        
+        if (DEBUG) {
+          if ((move === 0 && !peq(cand, [4,7])) || (move === 1 && !peq(cand, [6,5]))) {
+            console.log("skipping empty: " + JSON.stringify(cand));
+            continue;
+          }
         }
-        */
+        
         var sources = [];
         // decide whether to pull candidate moves from groups or singles
         if (groups.hasOwnProperty(col) && groups[col].length > 0) {
@@ -264,17 +274,19 @@ var dwelp = function dwelpSolver() {
         // loop and check all legal moves
         for (var k = 0; k < sources.length; k++) {
           var src = sources[k];
-          /*
-          if (move === 0 && !peq(src[0], [7,5])) {
-            console.log("skipping src: " + JSON.stringify(src));
-            continue;
+          
+          if (DEBUG) {
+            if ((move === 0 && !peq(src[0], [6,5])) || (move === 1 && !peq(src[0], [5,6]))) {
+              console.log("skipping src: " + JSON.stringify(src));
+              continue;
+            }
           }
-          */
+          
         
           if (isLegalMove(src, cand, empties, singles[col], multies[col])) {
             updatedState = moveTiles(col, src, cand, empties, singles, multies, groups);
             var nextMoveStr = JSON.stringify(src[0]) + "->" + JSON.stringify(cand);
-            //console.log("move " + move + ": considering " + nextMoveStr);
+            if (DEBUG) console.log("move " + move + ": considering " + nextMoveStr);
             if (weWin(updatedState.singles, updatedState.multies)) {
               moveChain += nextMoveStr;
               this.solution = moveChain;
@@ -299,7 +311,7 @@ var dwelp = function dwelpSolver() {
         }
       }
     }
-    //console.log("no legal moves");
+    if (DEBUG) console.log("no legal moves");
     return false;
   }
 
