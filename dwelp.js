@@ -149,7 +149,7 @@ var dwelp = function dwelpSolver() {
   // execute a given move
   var moveTiles = function(color, tiles, to, emptyTiles,
                             singleTiles, multiTiles, groupedTiles) {
-    var DEBUG = false;
+    var DEBUG = true;
     
     // first make copies of all arrays
     newEmpties = emptyTiles.concat(tiles); // add newly vacated tiles
@@ -174,7 +174,7 @@ var dwelp = function dwelpSolver() {
     }
 
     // update positions in groups
-    newGroupPositions = []
+    var newGroupPositions = [];
     for (var i = 0; i < newGrouped[color].length; i++) {
       newGroupPositions.push(translate(newGrouped[color][i], offset));
     }
@@ -221,7 +221,7 @@ var dwelp = function dwelpSolver() {
   // recursively find, and assign to parent object, a solution to a game
   var solve = function(move, maxMoves, moveChain, empties, singles,
                         multies, groups, alternatingColors, forcedColor) {
-    var DEBUG = false;
+    var DEBUG = true;
     
     if (move >= maxMoves) {
       if (DEBUG) console.log("too many moves");
@@ -251,7 +251,7 @@ var dwelp = function dwelpSolver() {
         var cand = empties[j];
         
         if (DEBUG) {
-          if ((move === 0 && !peq(cand, [4,7])) || (move === 1 && !peq(cand, [6,5]))) {
+          if ((move === 0 && !peq(cand, [5,3])) || (move === 1 && !peq(cand, [9,6]))) {
             console.log("skipping empty: " + JSON.stringify(cand));
             continue;
           }
@@ -276,7 +276,7 @@ var dwelp = function dwelpSolver() {
           var src = sources[k];
           
           if (DEBUG) {
-            if ((move === 0 && !peq(src[0], [6,5])) || (move === 1 && !peq(src[0], [5,6]))) {
+            if ((move === 0 && !peq(src[0], [8,3])) || (move === 1 && !peq(src[0], [9,3]))) {
               console.log("skipping src: " + JSON.stringify(src));
               continue;
             }
