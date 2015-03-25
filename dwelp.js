@@ -128,7 +128,8 @@ var dwelp = function dwelpSolver() {
         for (var j = 0; j < singleTiles.length; j++) {
           // ignore current move tile if this happens to be a single
           if (!(tiles.length === 1 && peq(tiles[i], singleTiles[j])) &&
-              dist(target, singleTiles[j]) === 1) {
+              dist(target, singleTiles[j]) === 1 && 
+              adjacents.pIndexOf(singleTiles[j]) === -1) {
             adjacents.push(singleTiles[j]);
           }
         }
@@ -137,7 +138,8 @@ var dwelp = function dwelpSolver() {
       if (multiTiles) {
         for (var j = 0; j < multiTiles.length; j++) {
           // dont need tile check; can't move multiTiles
-          if (dist(target, multiTiles[j]) === 1) {
+          if (dist(target, multiTiles[j]) === 1 &&
+              adjacents.pIndexOf(singleTiles[j]) === -1) {
             adjacents.push(multiTiles[j]);
           }
         }
@@ -149,7 +151,7 @@ var dwelp = function dwelpSolver() {
   // execute a given move
   var moveTiles = function(color, tiles, to, emptyTiles,
                             singleTiles, multiTiles, groupedTiles) {
-    var DEBUG = true;
+    var DEBUG = false;
     
     // first make copies of all arrays
     newEmpties = emptyTiles.concat(tiles); // add newly vacated tiles
@@ -221,7 +223,7 @@ var dwelp = function dwelpSolver() {
   // recursively find, and assign to parent object, a solution to a game
   var solve = function(move, maxMoves, moveChain, empties, singles,
                         multies, groups, alternatingColors, forcedColor) {
-    var DEBUG = true;
+    var DEBUG = false;
     
     if (move >= maxMoves) {
       if (DEBUG) console.log("too many moves");
