@@ -139,7 +139,7 @@ var dwelp = function dwelpSolver() {
         for (var j = 0; j < multiTiles.length; j++) {
           // dont need tile check; can't move multiTiles
           if (dist(target, multiTiles[j]) === 1 &&
-              adjacents.pIndexOf(singleTiles[j]) === -1) {
+              adjacents.pIndexOf(multiTiles[j]) === -1) {
             adjacents.push(multiTiles[j]);
           }
         }
