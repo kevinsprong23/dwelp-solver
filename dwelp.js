@@ -75,7 +75,7 @@ var dwelp = function dwelpSolver() {
     var DEBUG = false;
     
     // if to square isn't empty, fail fast
-    if (emptyTiles.pIndexOf(to) === -1) {
+    if (emptyTiles.pIndexOf(to) === -1 && tiles.pIndexOf(to) === -1) {
       if (DEBUG) console.log("to tile " + JSON.stringify(to) + " not empty");
       return false;
     }
@@ -86,7 +86,7 @@ var dwelp = function dwelpSolver() {
       var target = translate(tiles[i], offset);
       // check the group ("tiles") as well; group can move onto previous self
       if (emptyTiles.pIndexOf(target) === -1 && tiles.pIndexOf(target) === -1) {
-        if (DEBUG) console.log("target tile " + JSON.stringify(target) + " is occupied by another non-group tile");
+        if (DEBUG) console.log(JSON.stringify(tiles) + "-" + JSON.stringify(to) + ": target tile " + JSON.stringify(target) + " not available");
         return false;
       }
       // and that we are moving adjacent to 1+ same-color single tiles
@@ -95,7 +95,7 @@ var dwelp = function dwelpSolver() {
           // ignore current move tile if this happens to be a single
           if (!(tiles.length === 1 && peq(tiles[i], singleTiles[j])) &&
               dist(target, singleTiles[j]) === 1) {
-            if (DEBUG) console.log("target tile " + JSON.stringify(target) + " is near a single tile");
+            if (DEBUG) console.log(JSON.stringify(tiles) + "-" + JSON.stringify(to) + ": target tile " + JSON.stringify(target) + " is near a single tile");
             hasAdjacentSingle = true;
             break;
           }
@@ -249,18 +249,25 @@ var dwelp = function dwelpSolver() {
       if (forcedColor.length > 0 && col !== forcedColor) {
         continue;
       }
-      for (var j = 0; j < empties.length; j++) {
-        var cand = empties[j];
+      var cands;
+      if (groups.hasOwnProperty(col) && groups[col].length > 0) {
+        cands = empties.concat(groups[col]);
+      } else {
+        cands = empties;
+      }
+      // check each candidate move
+      for (var j = 0; j < cands.length; j++) {
+        var cand = cands[j];
         
         if (DEBUG) {
-          if ((move === 0 && !peq(cand, [5,3])) || (move === 1 && !peq(cand, [9,6]))) {
+          if ((move === 0 && !peq(cand, [4,3])) || (move === 1 && !peq(cand, [1,5]))) {
             console.log("skipping empty: " + JSON.stringify(cand));
             continue;
           }
         }
         
         var sources = [];
-        // decide whether to pull candidate moves from groups or singles
+        // decide whether to pull source tiles from groups or singles
         if (groups.hasOwnProperty(col) && groups[col].length > 0) {
           //console.log("move " + move + ": considering groups");
           sources.push(groups[col]);  // array wrapping the groups array
@@ -278,13 +285,12 @@ var dwelp = function dwelpSolver() {
           var src = sources[k];
           
           if (DEBUG) {
-            if ((move === 0 && !peq(src[0], [8,3])) || (move === 1 && !peq(src[0], [9,3]))) {
+            if ((move === 0 && !peq(src[0], [4,2])) || (move === 1 && !peq(src[0], [4,3]))) {
               console.log("skipping src: " + JSON.stringify(src));
               continue;
             }
           }
-          
-        
+
           if (isLegalMove(src, cand, empties, singles[col], multies[col])) {
             updatedState = moveTiles(col, src, cand, empties, singles, multies, groups);
             var nextMoveStr = JSON.stringify(src[0]) + "->" + JSON.stringify(cand);
