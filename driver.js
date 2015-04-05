@@ -45,7 +45,7 @@ function processSpace(d, i) {
     if (idx === -1) {
       d3.select("#circle_" + i)
         .attr("stroke", "#777")
-        .attr("stroke-width", "2px")
+        .attr("stroke-width", function(){return (thisMode === "empty") ? "1px" : "2px";})
         .attr("fill", getFillColor(mode))
         .attr("opacity", 0.8);
       array.push(coordinates);   
