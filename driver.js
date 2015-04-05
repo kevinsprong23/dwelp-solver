@@ -45,6 +45,7 @@ function processSpace(d, i) {
     if (idx === -1) {
       d3.select("#circle_" + i)
         .attr("stroke", "#777")
+        .attr("stroke-width", "2px")
         .attr("fill", getFillColor(mode))
         .attr("opacity", 0.8);
       array.push(coordinates);   
@@ -63,6 +64,7 @@ function processSpace(d, i) {
     } else {
       d3.select("#circle_" + i)
         .attr("stroke", "#eee")
+        .attr("stroke-width", "1px")
         .attr("fill", getFillColor("bg"))
         .attr("opacity", 0.2);
       array.pSplice(coordinates); 
@@ -77,6 +79,7 @@ function processSpace(d, i) {
         // here we want to select second row
         d3.select("#circle_" + i)
           .attr("stroke", "#000")
+          .attr("stroke-width", "2px")
           .attr("fill", getFillColor(mode))
           .attr("opacity", 0.8);
         array.push(coordinates);   
@@ -112,7 +115,7 @@ var singles = {'blue':[], 'orange':[], 'purple':[], 'red': [], 'green': []};
 var multies = {'blue':[], 'orange':[], 'purple':[], 'green': [], 'red': []};
 
 // set up grid on screen
-var gridDim = 10;
+var gridDim = 9;
 var canvSize = 500;
 
 var spaceType = 'empty';
